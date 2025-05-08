@@ -2,6 +2,7 @@ import express, {Request, Response} from "express";
 const route = express.Router();
 import { usuarioPool } from "../Interfaces/IUsuario";
 import { pool } from "../db";
+import { Result } from "pg";
 
 //Cadastro
 route.post("/cadastro", async (req: Request<{}, {}, usuarioPool>, res:Response) =>{
@@ -54,18 +55,23 @@ route.delete("/deletar", async (req: Request, res: Response) => {
 
 })
 
-// route.delete("/deletar", async (req,res) => {
-    
-//     const id = parseInt(req.params.id);
+//Listar
+route.get("/", async (req: Request, res: Response) =>{
 
-//     const index = customers.findIndex(item => item.id === id);
-//     const status = index >= 0 ? 200 : 404;
+    try {
 
-//     if(index >= 0) {
-//         customers.splice(index, 1);
-//     }
+        const lista = await pool.query(
+            "SELECT * FROM Usuario ORDER BY id"
+        );
+        res.status(200).send(lista.rows);
 
-//     return res.status(status).json();
-// })
+    } catch (error) {
+        
+        console.error("Erro ao listar os usuários!!!");
+        res.status(500).send({ error: 'Erro ao buscar usuários' });
+
+    }
+
+})
 
 module.exports = route;

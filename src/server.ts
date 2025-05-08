@@ -12,7 +12,6 @@ app.listen(port, hostname, () => {
   console.log(`Servidor iniciado`);
 });
 
-//Cadastro de Usuario
-const usuarioRoute = require ("./Model/Usuario");
-
+//Criação da rota Usuario
+const usuarioRoute = require("./Model/Usuario");
 app.use("/Usuario", usuarioRoute);
