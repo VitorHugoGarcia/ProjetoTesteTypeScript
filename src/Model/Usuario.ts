@@ -1,77 +1,53 @@
-import express, {Request, Response} from "express";
-const route = express.Router();
 import { usuarioPool } from "../Interfaces/IUsuario";
-import { pool } from "../db";
-import { Result } from "pg";
+import { pool } from "../config/db";
 
-//Cadastro
-route.post("/cadastro", async (req: Request<{}, {}, usuarioPool>, res:Response) =>{
-    const {nome, senha} = req.body;
+export const criarUsuario = async ({ nome, senha }: usuarioPool) => {
+    
+    const novoUsuario = await pool.query(
+      'INSERT INTO Usuario(nome, senha) VALUES($1, $2) RETURNING *',
+      [nome, senha]
+    );
 
-    try {
-        
-        const newUsuario = await pool.query(
-            'INSERT INTO Usuario(nome, senha) VALUES($1, $2) RETURNING *', [nome, senha]
-        )
+    return novoUsuario.rows[0];
 
-        res.status(201).send({
-            message: 'Usuario Criado com Sucesso!!!',
-            userInfo: newUsuario.rows[0],
-        });
+};
+  
+export const deletarUsuario = async (id: number) => {
 
-    } catch (error) {
-        console.log(error);
-        res.status(500).send(error);
-    }
-})
+    const deletar = await pool.query(
+      'DELETE FROM Usuario WHERE id = $1 RETURNING *',
+      [id]
+    );
 
-//Delete
-route.delete("/deletar", async (req: Request, res: Response) => {
+    return deletar;
 
-    const { id } = req.body;
+};
+  
+export const listarUsuarios = async () => {
+
+    const lista = await pool.query('SELECT * FROM Usuario ORDER BY id');
+
+    return lista.rows;
+
+};
+
+export const editarUsuarios = async (
+    id: number, campos: { 
+        nome?: string, senha?: string 
+    }) => {
+
+        const keys = Object.keys(campos);
+        const values = Object.values(campos);
+
+        // Monta query dinâmica
+        const sets = keys.map((key, i) => `${key} = $${i + 1}`).join(", ");
+        const query = `UPDATE Usuario SET ${sets} WHERE id = $${keys.length + 1} RETURNING *`;
 
         try {
-
-            const deletar = await pool.query(
-                "DELETE FROM Usuario WHERE id = $1 RETURNING *", [id]
-            );
-
-            if (deletar.rowCount === 0) {
-                res.status(404).send({
-                    message: "Usuario não encontrado!!!",
-                    deletedUser: deletar.rows[0],
-                });
-            }
-
-            res.status(200).send({
-                message: "Usuário deletado com sucesso!",
-                deletedUser: deletar.rows[0],
-            });
-
-        } catch (error) {
-            console.error(error);
-            res.status(500).send({ error: "Erro ao deletar usuário" });
+            const resultado = await pool.query(query, [...values, id]);
+            return resultado.rows[0];
+        } catch (err) {
+            throw err;
         }
 
-})
-
-//Listar
-route.get("/", async (req: Request, res: Response) =>{
-
-    try {
-
-        const lista = await pool.query(
-            "SELECT * FROM Usuario ORDER BY id"
-        );
-        res.status(200).send(lista.rows);
-
-    } catch (error) {
-        
-        console.error("Erro ao listar os usuários!!!");
-        res.status(500).send({ error: 'Erro ao buscar usuários' });
-
     }
-
-})
-
-module.exports = route;
