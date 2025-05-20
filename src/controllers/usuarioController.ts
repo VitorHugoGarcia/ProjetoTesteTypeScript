@@ -1,10 +1,52 @@
 import { Request, Response } from "express";
-import { criarUsuario, deletarUsuario, listarUsuarios } from "../Model/Usuario";
+import { 
+    criarUsuario, 
+    deletarUsuario, 
+    listarUsuarios, 
+    buscarUsuarioPorCredeciais } from "../Model/Usuario";
+import Jwt from "jsonwebtoken";
 import { editarUsuarioService } from "../services/usuarioServices";
 
-export const cadastrarUsuario = async (req: Request, res: Response) => {
+const key = process.env.JWT_SECRET || "padrao_secreto";
 
-    console.log("REQ BODY:", req.body);
+export const login = async (req: Request, res: Response) => {
+    const {nome, senha} = req.body;
+
+    try {
+
+        const usuario = await buscarUsuarioPorCredeciais(nome, senha);
+        
+        if (!usuario) res.status(401).send(
+            {
+                message: "Credenciais inváidas!"
+            }
+        );
+
+        const token = Jwt.sign({id: usuario.id, nome: usuario.nome}, key, {
+            expiresIn: "1h"
+        });
+
+        res.send(
+            {
+                message: "Login bem-sucedido!!",
+                token: token
+            }
+        );
+
+    } catch (err) {
+        
+        res.status(500).send(
+            { 
+                message: "Erro ao realizar login!" 
+            }
+        );
+
+        console.error("Erro ao realizar o login", err);
+
+    }
+}
+
+export const cadastrarUsuario = async (req: Request, res: Response) => {
 
     const { nome, senha } = req.body;
 

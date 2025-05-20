@@ -31,6 +31,18 @@ export const listarUsuarios = async () => {
 
 };
 
+export const buscarUsuarioPorCredeciais = async (
+    nome: string, 
+    senha: string) => {
+
+        const usuario = await pool.query(
+            "SELECT * FROM Usuario WHERE nome = $1 AND senha = $2",
+            [nome, senha]
+        );
+
+        return usuario.rows[0];
+    };
+
 export const editarUsuarios = async (
     id: number, campos: { 
         nome?: string, senha?: string 
